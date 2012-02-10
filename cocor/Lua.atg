@@ -1,0 +1,40 @@
+COMPILER Lua
+
+CHARACTERS
+    uletter = 'A' .. 'Z'.
+    lletter = 'a' .. 'z'.
+    letter = uletter + lletter.                                          /* Все букв */
+    digit = "0123456789".                                                /* Все цифры */
+    digit0_1 = "01".
+    digit0_4 = "01234".
+    digit0_5 = "012345".
+    hexdigital = digit + "abcdef".                                       /* Шестнадцатиричные цифры*/
+    nodigit = ANY - digit.                                               /* Все не цифры */
+    underline  = '_'.                                                    /* Нижнее подчеркивание */
+    cr  = '\r'.                                                          /* Возврат каретки */ 
+    lf  = '\n'.                                                          /* Перевод строки */
+    tab = '\t'.                                                          /* Символ табуляции */
+    ctrlesc = '\a'+'\b'+'\f'+'\n'+'\r'+'\t'+'\v'+'\\'+'\"'+'\''.
+    inString1 = ANY - '\\' - '\"'.
+    inString2 = ANY - '\\' - '\''.
+    anychar = ANY.
+
+TOKENS
+    Name    = (letter | underline) {letter | underline | digit}.
+    Int     = digit {digit}.
+    Float   = digit {digit} '.' digit {digit}.
+    Exp     = digit {digit} ['.' digit {digit}] ('e' | 'E') ['-'] digit {digit}.   
+    Hex     = "0x" hexdigital {hexdigital}.
+/*    DecEsc  = '\\' ( (digit [digit]) | (digit0_1 digit digit) | ('2' digit0_4 digit) | ("25" digit0_5)). */
+    NormalString = ('\"' {inString1} '\"') | ('\'' {inString2} '\'').
+    LongString = '[' {'='} '[' {anychar} ']' {'='} ']'.
+
+COMMENTS FROM "[[" TO "]]" NESTED      /* Комментарий должен начинаться с --[[ */
+COMMENTS FROM "--" TO cr lf
+
+IGNORE '\t' .. '\r'
+
+PRODUCTIONS
+    Lua = "red".
+
+END Lua.
