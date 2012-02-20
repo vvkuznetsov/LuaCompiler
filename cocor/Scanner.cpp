@@ -4,6 +4,7 @@
 #include <string.h>
 #include "Scanner.h"
 
+namespace Lua {
 
 
 
@@ -421,19 +422,59 @@ Scanner::~Scanner() {
 void Scanner::Init() {
 	EOL    = '\n';
 	eofSym = 0;
-	maxT = 9;
-	noSym = 9;
+	maxT = 55;
+	noSym = 55;
 	int i;
 	for (i = 65; i <= 90; ++i) start.set(i, 1);
 	for (i = 95; i <= 95; ++i) start.set(i, 1);
 	for (i = 97; i <= 122; ++i) start.set(i, 1);
-	for (i = 49; i <= 57; ++i) start.set(i, 12);
-	start.set(48, 13);
+	for (i = 49; i <= 57; ++i) start.set(i, 20);
+	start.set(48, 21);
 	start.set(34, 7);
 	start.set(39, 8);
-	start.set(91, 10);
+	start.set(91, 22);
+	start.set(61, 44);
+	start.set(44, 12);
+	start.set(46, 45);
+	start.set(58, 13);
+	start.set(59, 14);
+	start.set(93, 15);
+	start.set(40, 16);
+	start.set(41, 17);
+	start.set(123, 18);
+	start.set(125, 19);
+	start.set(43, 32);
+	start.set(45, 33);
+	start.set(42, 34);
+	start.set(47, 35);
+	start.set(94, 36);
+	start.set(37, 37);
+	start.set(60, 46);
+	start.set(62, 47);
+	start.set(126, 41);
+	start.set(35, 43);
 		start.set(Buffer::EoF, -1);
-	keywords.set(L"red", 8);
+	keywords.set(L"do", 19);
+	keywords.set(L"end", 20);
+	keywords.set(L"while", 21);
+	keywords.set(L"repeat", 22);
+	keywords.set(L"until", 23);
+	keywords.set(L"if", 24);
+	keywords.set(L"then", 25);
+	keywords.set(L"elseif", 26);
+	keywords.set(L"else", 27);
+	keywords.set(L"for", 28);
+	keywords.set(L"in", 29);
+	keywords.set(L"function", 30);
+	keywords.set(L"local", 31);
+	keywords.set(L"return", 32);
+	keywords.set(L"break", 33);
+	keywords.set(L"nil", 34);
+	keywords.set(L"false", 35);
+	keywords.set(L"true", 36);
+	keywords.set(L"and", 51);
+	keywords.set(L"or", 52);
+	keywords.set(L"not", 53);
 
 
 	tvalLength = 128;
@@ -505,6 +546,25 @@ bool Scanner::Comment0() {
 	if (ch == L'-') {
 		NextCh();
 		for(;;) {
+			if (ch == 10) {
+				level--;
+				if (level == 0) { oldEols = line - line0; NextCh(); return true; }
+				NextCh();
+			} else if (ch == buffer->EoF) return false;
+			else NextCh();
+		}
+	} else {
+		buffer->SetPos(pos0); NextCh(); line = line0; col = col0; charPos = charPos0;
+	}
+	return false;
+}
+
+bool Scanner::Comment1() {
+	int level = 1, pos0 = pos, line0 = line, col0 = col, charPos0 = charPos;
+	NextCh();
+	if (ch == L'-') {
+		NextCh();
+		for(;;) {
 			if (ch == 13) {
 				NextCh();
 				if (ch == 10) {
@@ -521,7 +581,7 @@ bool Scanner::Comment0() {
 	return false;
 }
 
-bool Scanner::Comment1() {
+bool Scanner::Comment2() {
 	int level = 1, pos0 = pos, line0 = line, col0 = col, charPos0 = charPos;
 	NextCh();
 	if (ch == L'[') {
@@ -534,7 +594,7 @@ bool Scanner::Comment1() {
 					if (level == 0) { oldEols = line - line0; NextCh(); return true; }
 					NextCh();
 				}
-			} else if (ch == L'[') {
+			} else if (ch == L'-') {
 				NextCh();
 				if (ch == L'[') {
 					level++; NextCh();
@@ -600,7 +660,7 @@ Token* Scanner::NextToken() {
 	while (ch == ' ' ||
 			(ch >= 9 && ch <= 13)
 	) NextCh();
-	if ((ch == L'-' && Comment0()) || (ch == L'[' && Comment1())) return NextToken();
+	if ((ch == L'-' && Comment0()) || (ch == L'-' && Comment1()) || (ch == L'-' && Comment2())) return NextToken();
 	int recKind = noSym;
 	int recEnd = pos;
 	t = CreateToken();
@@ -650,11 +710,13 @@ Token* Scanner::NextToken() {
 			case_7:
 			if (ch <= L'!' || (ch >= L'#' && ch <= L'[') || (ch >= L']' && ch <= 65535)) {AddCh(); goto case_7;}
 			else if (ch == L'"') {AddCh(); goto case_9;}
+			else if (ch == 92) {AddCh(); goto case_23;}
 			else {goto case_0;}
 		case 8:
 			case_8:
 			if (ch <= L'&' || (ch >= L'(' && ch <= L'[') || (ch >= L']' && ch <= 65535)) {AddCh(); goto case_8;}
 			else if (ch == 39) {AddCh(); goto case_9;}
+			else if (ch == 92) {AddCh(); goto case_24;}
 			else {goto case_0;}
 		case 9:
 			case_9:
@@ -667,45 +729,145 @@ Token* Scanner::NextToken() {
 		case 11:
 			case_11:
 			if (ch <= 92 || (ch >= L'^' && ch <= 65535)) {AddCh(); goto case_11;}
-			else if (ch == L']') {AddCh(); goto case_14;}
+			else if (ch == L']') {AddCh(); goto case_25;}
 			else {goto case_0;}
 		case 12:
-			case_12:
+			{t->kind = 9; break;}
+		case 13:
+			{t->kind = 11; break;}
+		case 14:
+			{t->kind = 12; break;}
+		case 15:
+			{t->kind = 14; break;}
+		case 16:
+			{t->kind = 15; break;}
+		case 17:
+			{t->kind = 16; break;}
+		case 18:
+			{t->kind = 17; break;}
+		case 19:
+			{t->kind = 18; break;}
+		case 20:
+			case_20:
 			recEnd = pos; recKind = 2;
-			if ((ch >= L'0' && ch <= L'9')) {AddCh(); goto case_12;}
-			else if (ch == L'.') {AddCh(); goto case_15;}
+			if ((ch >= L'0' && ch <= L'9')) {AddCh(); goto case_20;}
+			else if (ch == L'.') {AddCh(); goto case_26;}
 			else if (ch == L'E' || ch == L'e') {AddCh(); goto case_2;}
 			else {t->kind = 2; break;}
-		case 13:
+		case 21:
 			recEnd = pos; recKind = 2;
-			if ((ch >= L'0' && ch <= L'9')) {AddCh(); goto case_12;}
-			else if (ch == L'.') {AddCh(); goto case_15;}
+			if ((ch >= L'0' && ch <= L'9')) {AddCh(); goto case_20;}
+			else if (ch == L'.') {AddCh(); goto case_26;}
 			else if (ch == L'E' || ch == L'e') {AddCh(); goto case_2;}
 			else if (ch == L'x') {AddCh(); goto case_5;}
 			else {t->kind = 2; break;}
-		case 14:
-			case_14:
+		case 22:
+			recEnd = pos; recKind = 13;
+			if (ch == L'[') {AddCh(); goto case_11;}
+			else if (ch == L'=') {AddCh(); goto case_10;}
+			else {t->kind = 13; break;}
+		case 23:
+			case_23:
+			if (ch <= L'!' || (ch >= L'#' && ch <= L'[') || (ch >= L']' && ch <= 65535)) {AddCh(); goto case_7;}
+			else if (ch == L'"') {AddCh(); goto case_27;}
+			else if (ch == 92) {AddCh(); goto case_23;}
+			else {goto case_0;}
+		case 24:
+			case_24:
+			if (ch <= L'&' || (ch >= L'(' && ch <= L'[') || (ch >= L']' && ch <= 65535)) {AddCh(); goto case_8;}
+			else if (ch == 39) {AddCh(); goto case_28;}
+			else if (ch == 92) {AddCh(); goto case_24;}
+			else {goto case_0;}
+		case 25:
+			case_25:
 			if (ch <= L'<' || (ch >= L'>' && ch <= 92) || (ch >= L'^' && ch <= 65535)) {AddCh(); goto case_11;}
-			else if (ch == L']') {AddCh(); goto case_16;}
-			else if (ch == L'=') {AddCh(); goto case_14;}
+			else if (ch == L']') {AddCh(); goto case_29;}
+			else if (ch == L'=') {AddCh(); goto case_25;}
 			else {goto case_0;}
-		case 15:
-			case_15:
-			if ((ch >= L'0' && ch <= L'9')) {AddCh(); goto case_17;}
+		case 26:
+			case_26:
+			if ((ch >= L'0' && ch <= L'9')) {AddCh(); goto case_30;}
 			else {goto case_0;}
-		case 16:
-			case_16:
+		case 27:
+			case_27:
+			recEnd = pos; recKind = 6;
+			if (ch <= L'!' || (ch >= L'#' && ch <= L'[') || (ch >= L']' && ch <= 65535)) {AddCh(); goto case_7;}
+			else if (ch == L'"') {AddCh(); goto case_9;}
+			else if (ch == 92) {AddCh(); goto case_23;}
+			else {t->kind = 6; break;}
+		case 28:
+			case_28:
+			recEnd = pos; recKind = 6;
+			if (ch <= L'&' || (ch >= L'(' && ch <= L'[') || (ch >= L']' && ch <= 65535)) {AddCh(); goto case_8;}
+			else if (ch == 39) {AddCh(); goto case_9;}
+			else if (ch == 92) {AddCh(); goto case_24;}
+			else {t->kind = 6; break;}
+		case 29:
+			case_29:
 			recEnd = pos; recKind = 7;
 			if (ch <= L'<' || (ch >= L'>' && ch <= 92) || (ch >= L'^' && ch <= 65535)) {AddCh(); goto case_11;}
-			else if (ch == L']') {AddCh(); goto case_16;}
-			else if (ch == L'=') {AddCh(); goto case_14;}
+			else if (ch == L']') {AddCh(); goto case_29;}
+			else if (ch == L'=') {AddCh(); goto case_25;}
 			else {t->kind = 7; break;}
-		case 17:
-			case_17:
+		case 30:
+			case_30:
 			recEnd = pos; recKind = 3;
-			if ((ch >= L'0' && ch <= L'9')) {AddCh(); goto case_17;}
+			if ((ch >= L'0' && ch <= L'9')) {AddCh(); goto case_30;}
 			else if (ch == L'E' || ch == L'e') {AddCh(); goto case_2;}
 			else {t->kind = 3; break;}
+		case 31:
+			case_31:
+			{t->kind = 37; break;}
+		case 32:
+			{t->kind = 38; break;}
+		case 33:
+			{t->kind = 39; break;}
+		case 34:
+			{t->kind = 40; break;}
+		case 35:
+			{t->kind = 41; break;}
+		case 36:
+			{t->kind = 42; break;}
+		case 37:
+			{t->kind = 43; break;}
+		case 38:
+			case_38:
+			{t->kind = 46; break;}
+		case 39:
+			case_39:
+			{t->kind = 48; break;}
+		case 40:
+			case_40:
+			{t->kind = 49; break;}
+		case 41:
+			if (ch == L'=') {AddCh(); goto case_42;}
+			else {goto case_0;}
+		case 42:
+			case_42:
+			{t->kind = 50; break;}
+		case 43:
+			{t->kind = 54; break;}
+		case 44:
+			recEnd = pos; recKind = 8;
+			if (ch == L'=') {AddCh(); goto case_40;}
+			else {t->kind = 8; break;}
+		case 45:
+			recEnd = pos; recKind = 10;
+			if (ch == L'.') {AddCh(); goto case_48;}
+			else {t->kind = 10; break;}
+		case 46:
+			recEnd = pos; recKind = 45;
+			if (ch == L'=') {AddCh(); goto case_38;}
+			else {t->kind = 45; break;}
+		case 47:
+			recEnd = pos; recKind = 47;
+			if (ch == L'=') {AddCh(); goto case_39;}
+			else {t->kind = 47; break;}
+		case 48:
+			case_48:
+			recEnd = pos; recKind = 44;
+			if (ch == L'.') {AddCh(); goto case_31;}
+			else {t->kind = 44; break;}
 
 	}
 	AppendVal(t);
@@ -746,4 +908,5 @@ void Scanner::ResetPeek() {
 	pt = tokens;
 }
 
+} // namespace
 

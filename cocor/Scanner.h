@@ -1,7 +1,7 @@
 
 
-#if !defined(COCO_SCANNER_H__)
-#define COCO_SCANNER_H__
+#if !defined(Lua_COCO_SCANNER_H__)
+#define Lua_COCO_SCANNER_H__
 
 #include <limits.h>
 #include <stdio.h>
@@ -32,6 +32,7 @@
 #define COCO_HEAP_BLOCK_SIZE (64*1024)
 #define COCO_CPP_NAMESPACE_SEPARATOR L':'
 
+namespace Lua {
 
 
 // string handling, wide character
@@ -240,6 +241,7 @@ private:
 	void AddCh();
 	bool Comment0();
 	bool Comment1();
+	bool Comment2();
 
 	Token* NextToken();
 
@@ -256,6 +258,7 @@ public:
 
 }; // end Scanner
 
+} // namespace
 
 
 #endif
